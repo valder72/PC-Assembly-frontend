@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Assembly | Каталог комплектуючих</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">PC Assembly</span>
+            </div>
+            <div class="server-status" id="serverStatus">
+                <span class="status-indicator"></span>
+                <span class="status-text">Перевірка зв'язку з API...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container main-content">
+        <section class="hero-section">
+            <h1>Каталог комплектуючих для ПК</h1>
+            <p class="subtitle">Демонстрація клієнтської частини, що працює з Django REST API на окремому порту через CORS.</p>
+        </section>
+
+        <!-- Панель керування: пошук, фільтри, додавання -->
+        <section class="controls-card">
+            <div class="filters-row">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Пошук за назвою (напр. Ryzen, RTX)...">
+                </div>
+                <div class="filter-box">
+                    <select id="categorySelect">
+                        <option value="">Всі категорії</option>
+                    </select>
+                </div>
+                <div class="filter-box">
+                    <select id="manufacturerSelect">
+                        <option value="">Всі виробники</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" id="applyFiltersBtn">Знайти</button>
+                <button class="btn btn-secondary" id="resetFiltersBtn">Скинути</button>
+                <button class="btn btn-accent" id="openAddModalBtn">+ Додати деталь</button>
+            </div>
+        </section>
+
+        <!-- Повідомлення про помилки та статус завантаження -->
+        <div id="loader" class="loader-container">
+            <div class="spinner"></div>
+            <p>Завантаження каталогу з API...</p>
+        </div>
+
+        <div id="errorMessage" class="error-banner" style="display: none;">
+            <strong>Помилка з'єднання:</strong> Не вдалося отримати дані від бекенду. Переконайтеся, що сервер запущено на <code>http://127.0.0.1:8000/</code>.
+        </div>
+
+        <!-- Сітка товарів -->
+        <section class="catalog-grid" id="partsContainer">
+            <!-- Картки товарів рендеряться динамічно через app.js -->
+        </section>
+
+        <div id="emptyCatalog" class="empty-state" style="display: none;">
+            <p>Комплектуючих за заданими критеріями не знайдено.</p>
+        </div>
+    </main>
+
+    <!-- Модальне вікно для додавання деталі -->
+    <div class="modal" id="addPartModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Додати нову деталь</h2>
+                <button class="close-btn" id="closeAddModalBtn">&times;</button>
+            </div>
+            <form id="addPartForm">
+                <div class="form-group">
+                    <label for="newTitle">Назва деталі *</label>
+                    <input type="text" id="newTitle" required placeholder="напр. AMD Ryzen 7 7800X3D">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newCategory">Категорія *</label>
+                        <select id="newCategory" required>
+                            <option value="">Оберіть категорію</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="newManufacturer">Виробник *</label>
+                        <select id="newManufacturer" required>
+                            <option value="">Оберіть виробника</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newPrice">Ціна (грн) *</label>
+                        <input type="number" id="newPrice" step="0.01" min="0" required placeholder="напр. 17500.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="newRating">Рейтинг (0-5)</label>
+                        <input type="number" id="newRating" step="0.1" min="0" max="5" value="5.0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="newSpecs">Характеристики (JSON) *</label>
+                    <textarea id="newSpecs" rows="3" required placeholder='{"socket": "AM5", "cores": 8}'></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="newDescription">Опис</label>
+                    <textarea id="newDescription" rows="2" placeholder="Короткий опис комплектуючого..."></textarea>
+                </div>
+                <div id="formError" class="form-error" style="display: none;"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelAddBtn">Скасувати</button>
+                    <button type="submit" class="btn btn-primary">Зберегти деталь</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container footer-content">
+            <p>PC Assembly Frontend &bull; Працює на порті <code>5500</code> &bull; Бекенд API на <code>http://127.0.0.1:8000</code></p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
