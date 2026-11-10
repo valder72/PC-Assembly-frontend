@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initApp() {
+    await updateAuthUI();
     await checkApiHealth();
     await loadCategories();
     await loadManufacturers();
@@ -233,6 +234,14 @@ async function handleAddPart(e) {
     e.preventDefault();
     formError.style.display = 'none';
 
+    if (!isAuthenticated()) {
+        showFormError('Для додавання деталі необхідно спочатку авторизуватися.');
+        setTimeout(() => {
+            window.location.href = 'login.html?next=index.html';
+        }, 1500);
+        return;
+    }
+
     let specsObj = {};
     const specsRaw = document.getElementById('newSpecs').value.trim();
     try {
@@ -256,13 +265,18 @@ async function handleAddPart(e) {
     };
 
     try {
-        const response = await fetch(`${API_BASE_URL}/parts/`, {
+        const response = await authenticatedFetch(`${API_BASE_URL}/parts/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(payload)
         });
+
+        if (response.status === 403) {
+            showFormError('Недостатньо прав: додавати деталі в каталог може лише адміністратор (is_staff: true).');
+            return;
+        }
 
         const data = await response.json();
 
@@ -283,20 +297,28 @@ async function handleAddPart(e) {
 
 // 7. Видалення деталі (DELETE)
 async function deletePart(id, title) {
+    if (!isAuthenticated()) {
+        alert('Для видалення деталі необхідно увійти як адміністратор.');
+        window.location.href = 'login.html?next=index.html';
+        return;
+    }
+
     if (!confirm(`Ви дійсно бажаєте видалити "${title}" (ID: ${id})?`)) {
         return;
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/parts/${id}/`, {
+        const response = await authenticatedFetch(`${API_BASE_URL}/parts/${id}/`, {
             method: 'DELETE'
         });
 
         if (response.status === 204) {
             await loadParts();
+        } else if (response.status === 403) {
+            alert('Недостатньо прав: видаляти деталі може лише адміністратор (is_staff: true).');
         } else {
             const data = await response.json();
-            alert(`Помилка видалення: ${data.error || 'Невідома помилка'}`);
+            alert(`Помилка видалення: ${data.error || data.detail || 'Невідома помилка'}`);
         }
     } catch (err) {
         alert('Не вдалося з\'єднатися з сервером для видалення.');

@@ -16,9 +16,12 @@
                 <span class="logo-icon">⚡</span>
                 <span class="logo-text">PC Assembly</span>
             </div>
-            <div class="server-status" id="serverStatus">
-                <span class="status-indicator"></span>
-                <span class="status-text">Перевірка зв'язку з API...</span>
+            <div class="header-right" style="display: flex; align-items: center; gap: 16px;">
+                <div class="server-status" id="serverStatus">
+                    <span class="status-indicator"></span>
+                    <span class="status-text">Перевірка зв'язку з API...</span>
+                </div>
+                <div id="authNav" class="auth-nav"></div>
             </div>
         </div>
     </header>
@@ -130,6 +133,7 @@
         </div>
     </footer>
 
+    <script src="auth.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
