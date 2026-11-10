@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вхід | PC Assembly</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container header-container">
+            <a href="index.html" class="logo" style="text-decoration: none; color: inherit;">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">PC Assembly</span>
+            </a>
+            <div id="authNav" class="auth-nav">
+                <a href="index.html" class="btn btn-secondary btn-sm">Каталог</a>
+                <a href="register.html" class="btn btn-primary btn-sm">Реєстрація</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container main-content auth-page-container">
+        <div class="auth-card">
+            <h2>Вхід до облікового запису</h2>
+            <p class="auth-subtitle">Введіть ваші облікові дані для авторизації в системі</p>
+
+            <div id="authAlert" class="alert-box" style="display: none;"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Ім'я користувача (Username) *</label>
+                    <input type="text" id="username" required autocomplete="username" placeholder="напр. ivan_master">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Пароль *</label>
+                    <input type="password" id="password" required autocomplete="current-password" placeholder="Введіть пароль">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="loginSubmitBtn">Увійти</button>
+            </form>
+
+            <div class="auth-footer">
+                <span>Ще не маєте акаунту?</span>
+                <a href="register.html">Зареєструватися</a>
+            </div>
+        </div>
+    </main>
+
+    <script src="auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            redirectIfAuthenticated();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const nextUrl = urlParams.get('next');
+            const alertBox = document.getElementById('authAlert');
+
+            if (nextUrl) {
+                alertBox.className = 'alert-box alert-info';
+                alertBox.textContent = 'Для доступу до цієї сторінки необхідно спочатку увійти.';
+                alertBox.style.display = 'block';
+            }
+
+            const loginForm = document.getElementById('loginForm');
+            const submitBtn = document.getElementById('loginSubmitBtn');
+
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                alertBox.style.display = 'none';
+
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Перевірка...';
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/user/token/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.access) {
+                        setTokens(data.access, data.refresh);
+                        window.location.href = nextUrl ? decodeURIComponent(nextUrl) : 'index.html';
+                    } else {
+                        alertBox.className = 'alert-box alert-danger';
+                        alertBox.textContent = data.detail || 'Невірне ім\'я користувача або пароль.';
+                        alertBox.style.display = 'block';
+                    }
+                } catch {
+                    alertBox.className = 'alert-box alert-danger';
+                    alertBox.textContent = 'Помилка з\'єднання з сервером. Переконайтеся, що бекенд запущено.';
+                    alertBox.style.display = 'block';
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Увійти';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Реєстрація | PC Assembly</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container header-container">
+            <a href="index.html" class="logo" style="text-decoration: none; color: inherit;">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">PC Assembly</span>
+            </a>
+            <div id="authNav" class="auth-nav">
+                <a href="index.html" class="btn btn-secondary btn-sm">Каталог</a>
+                <a href="login.html" class="btn btn-primary btn-sm">Вхід</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container main-content auth-page-container">
+        <div class="auth-card">
+            <h2>Реєстрація нового користувача</h2>
+            <p class="auth-subtitle">Створіть обліковий запис для взаємодії з системою</p>
+
+            <div id="authAlert" class="alert-box" style="display: none;"></div>
+
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="username">Ім'я користувача (Username) *</label>
+                    <input type="text" id="username" required maxlength="150" placeholder="напр. ivan_master">
+                    <span class="field-error" id="error_username"></span>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">Ім'я (First Name)</label>
+                        <input type="text" id="firstName" maxlength="150" placeholder="Іван (необов'язково)">
+                        <span class="field-error" id="error_first_name"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Прізвище (Last Name)</label>
+                        <input type="text" id="lastName" maxlength="150" placeholder="Петренко (необов'язково)">
+                        <span class="field-error" id="error_last_name"></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Електронна пошта (Email) *</label>
+                    <input type="email" id="email" required maxlength="254" placeholder="name@example.com">
+                    <span class="field-error" id="error_email"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Пароль *</label>
+                    <input type="password" id="password" required placeholder="Мінімум 8 символів, літери та цифри">
+                    <span class="field-error" id="error_password"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="passwordConfirmation">Повторне введення пароля *</label>
+                    <input type="password" id="passwordConfirmation" required placeholder="Повторіть пароль">
+                    <span class="field-error" id="error_password_confirmation"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="registerSubmitBtn">Зареєструватися</button>
+            </form>
+
+            <div class="auth-footer">
+                <span>Вже зареєстровані?</span>
+                <a href="login.html">Увійти в акаунт</a>
+            </div>
+        </div>
+    </main>
+
+    <script src="auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            redirectIfAuthenticated();
+
+            const registerForm = document.getElementById('registerForm');
+            const submitBtn = document.getElementById('registerSubmitBtn');
+            const alertBox = document.getElementById('authAlert');
+
+            function clearFieldErrors() {
+                document.querySelectorAll('.field-error').forEach(el => el.textContent = '');
+                alertBox.style.display = 'none';
+            }
+
+            registerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                clearFieldErrors();
+
+                const username = document.getElementById('username').value.trim();
+                const firstName = document.getElementById('firstName').value.trim();
+                const lastName = document.getElementById('lastName').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+                const passwordConfirmation = document.getElementById('passwordConfirmation').value;
+
+                if (password !== passwordConfirmation) {
+                    document.getElementById('error_password_confirmation').textContent = 'Паролі не збігаються.';
+                    return;
+                }
+
+                if (password.length < 8) {
+                    document.getElementById('error_password').textContent = 'Пароль має містити щонайменше 8 символів.';
+                    return;
+                }
+
+                const payload = {
+                    username,
+                    first_name: firstName,
+                    last_name: lastName,
+                    email,
+                    password,
+                    password_confirmation: passwordConfirmation
+                };
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Реєстрація...';
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/user/register/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.status === 201) {
+                        alertBox.className = 'alert-box alert-success';
+                        alertBox.textContent = 'Реєстрація успішна! Перенаправляємо на сторінку входу...';
+                        alertBox.style.display = 'block';
+
+                        setTimeout(() => {
+                            window.location.href = 'login.html';
+                        }, 1200);
+                    } else if (response.status === 400) {
+                        Object.keys(data).forEach(field => {
+                            const errEl = document.getElementById(`error_${field}`);
+                            if (errEl) {
+                                const msg = Array.isArray(data[field]) ? data[field].join(' ') : data[field];
+                                errEl.textContent = msg;
+                            }
+                        });
+                        alertBox.className = 'alert-box alert-danger';
+                        alertBox.textContent = 'Будь ласка, виправте виявлені помилки у формі.';
+                        alertBox.style.display = 'block';
+                    } else {
+                        alertBox.className = 'alert-box alert-danger';
+                        alertBox.textContent = 'Помилка реєстрації. Спробуйте ще раз.';
+                        alertBox.style.display = 'block';
+                    }
+                } catch {
+                    alertBox.className = 'alert-box alert-danger';
+                    alertBox.textContent = 'Помилка зв\'язку з сервером. Переконайтеся, що бекенд працює.';
+                    alertBox.style.display = 'block';
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Зареєструватися';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

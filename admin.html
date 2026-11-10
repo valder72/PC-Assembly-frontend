@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель керування | PC Assembly</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container header-container">
+            <a href="index.html" class="logo" style="text-decoration: none; color: inherit;">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">PC Assembly</span>
+            </a>
+            <div id="authNav" class="auth-nav">
+                <!-- Заповнюється динамічно через auth.js -->
+            </div>
+        </div>
+    </header>
+
+    <main class="container main-content">
+        <div class="page-header">
+            <h1>Панель керування (Авторизована зона)</h1>
+            <p class="subtitle">Ця сторінка доступна виключно авторизованим користувачам системи.</p>
+        </div>
+
+        <div id="roleAlert" class="alert-box" style="display: none;"></div>
+
+        <!-- Профіль поточного користувача -->
+        <section class="controls-card" style="margin-bottom: 24px;">
+            <h2 style="font-size: 1.15rem; margin-bottom: 12px; color: var(--text-primary);">Дані вашого облікового запису</h2>
+            <div id="userProfileDetails" class="profile-grid">
+                <div>Завантаження профілю...</div>
+            </div>
+        </section>
+
+        <!-- Адміністративні дії (доступні лише для is_staff) -->
+        <div id="adminActionsSection" style="display: none;">
+            <section class="controls-card">
+                <h2 style="font-size: 1.15rem; margin-bottom: 16px; color: var(--text-primary);">Швидке додавання категорій та виробників (Тільки Admin)</h2>
+                
+                <div class="form-row">
+                    <!-- Додавання категорії -->
+                    <form id="createCategoryForm" style="flex: 1; min-width: 280px;">
+                        <h3 style="font-size: 0.95rem; margin-bottom: 8px; color: var(--accent);">+ Нова категорія</h3>
+                        <div class="form-group">
+                            <label for="catName">Назва категорії *</label>
+                            <input type="text" id="catName" required placeholder="напр. Охолодження (Cooling)">
+                        </div>
+                        <div class="form-group">
+                            <label for="catDesc">Опис</label>
+                            <input type="text" id="catDesc" placeholder="Системи рідинного та повітряного охолодження">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Створити категорію</button>
+                    </form>
+
+                    <!-- Додавання виробника -->
+                    <form id="createManufacturerForm" style="flex: 1; min-width: 280px;">
+                        <h3 style="font-size: 0.95rem; margin-bottom: 8px; color: var(--accent);">+ Новий виробник</h3>
+                        <div class="form-group">
+                            <label for="manName">Назва виробника *</label>
+                            <input type="text" id="manName" required placeholder="напр. ASUS">
+                        </div>
+                        <div class="form-group">
+                            <label for="manCountry">Країна</label>
+                            <input type="text" id="manCountry" placeholder="Taiwan">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Створити виробника</button>
+                    </form>
+                </div>
+            </section>
+        </div>
+
+        <div style="margin-top: 24px; text-align: center;">
+            <a href="index.html" class="btn btn-secondary">← Повернутися до каталогу</a>
+        </div>
+    </main>
+
+    <script src="auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await requireAuth();
+            if (!user) return;
+
+            await updateAuthUI();
+
+            const profileContainer = document.getElementById('userProfileDetails');
+            profileContainer.innerHTML = `
+                <div class="profile-item"><span>ID:</span> <strong>${user.id}</strong></div>
+                <div class="profile-item"><span>Username:</span> <strong>${escapeHtml(user.username)}</strong></div>
+                <div class="profile-item"><span>Email:</span> <strong>${escapeHtml(user.email)}</strong></div>
+                <div class="profile-item"><span>Ім'я:</span> <strong>${escapeHtml(user.first_name || '—')}</strong></div>
+                <div class="profile-item"><span>Прізвище:</span> <strong>${escapeHtml(user.last_name || '—')}</strong></div>
+                <div class="profile-item"><span>Роль:</span> <strong>${user.is_staff ? 'Адміністратор (is_staff: true)' : 'Звичайний користувач'}</strong></div>
+            `;
+
+            const adminSection = document.getElementById('adminActionsSection');
+            const roleAlert = document.getElementById('roleAlert');
+
+            if (user.is_staff) {
+                adminSection.style.display = 'block';
+                roleAlert.className = 'alert-box alert-success';
+                roleAlert.textContent = 'Ви увійшли як Адміністратор. Вам надано повний доступ до редагування та створення ресурсів.';
+                roleAlert.style.display = 'block';
+            } else {
+                roleAlert.className = 'alert-box alert-warning';
+                roleAlert.textContent = 'Ви увійшли як звичайний авторизований користувач. Додавання та зміна комплектуючих дозволені лише користувачам з роллю Administrator.';
+                roleAlert.style.display = 'block';
+            }
+
+            // Додавання категорії
+            const catForm = document.getElementById('createCategoryForm');
+            if (catForm) {
+                catForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const name = document.getElementById('catName').value.trim();
+                    const description = document.getElementById('catDesc').value.trim();
+
+                    try {
+                        const res = await authenticatedFetch(`${API_BASE_URL}/categories/`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name, description })
+                        });
+
+                        if (res.status === 201) {
+                            alert('Категорію успішно додано!');
+                            catForm.reset();
+                        } else {
+                            const err = await res.json();
+                            alert('Помилка: ' + JSON.stringify(err));
+                        }
+                    } catch {
+                        alert('Помилка з\'єднання.');
+                    }
+                });
+            }
+
+            // Додавання виробника
+            const manForm = document.getElementById('createManufacturerForm');
+            if (manForm) {
+                manForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const name = document.getElementById('manName').value.trim();
+                    const country = document.getElementById('manCountry').value.trim();
+
+                    try {
+                        const res = await authenticatedFetch(`${API_BASE_URL}/manufacturers/`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name, country })
+                        });
+
+                        if (res.status === 201) {
+                            alert('Виробника успішно додано!');
+                            manForm.reset();
+                        } else {
+                            const err = await res.json();
+                            alert('Помилка: ' + JSON.stringify(err));
+                        }
+                    } catch {
+                        alert('Помилка з\'єднання.');
+                    }
+                });
+            }
+        });
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
