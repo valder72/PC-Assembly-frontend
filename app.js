@@ -1,5 +1,6 @@
 // Базова адреса бекенд API
 var API_BASE_URL = window.API_BASE_URL || 'http://127.0.0.1:8000';
+let cachedUser = null;
 
 // DOM-елементи
 const partsContainer = document.getElementById('partsContainer');
@@ -32,7 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initApp() {
-    await updateAuthUI();
+    cachedUser = await updateAuthUI();
+    if (!cachedUser || !cachedUser.is_staff) {
+        if (openAddModalBtn) openAddModalBtn.style.display = 'none';
+    } else {
+        if (openAddModalBtn) openAddModalBtn.style.display = 'inline-block';
+    }
     await checkApiHealth();
     await loadCategories();
     await loadManufacturers();
@@ -204,6 +210,10 @@ function renderParts(parts) {
             maximumFractionDigits: 2
         });
 
+        const deleteBtnHtml = (cachedUser && cachedUser.is_staff)
+            ? `<button class="btn btn-danger delete-btn" data-id="${part.id}">Видалити</button>`
+            : '';
+
         card.innerHTML = `
             <div>
                 <div class="part-card-header">
@@ -217,13 +227,15 @@ function renderParts(parts) {
             </div>
             <div class="part-footer">
                 <span class="part-price">${priceFormatted} ₴</span>
-                <button class="btn btn-danger delete-btn" data-id="${part.id}">Видалити</button>
+                ${deleteBtnHtml}
             </div>
         `;
 
         // Слухач видалення
         const deleteBtn = card.querySelector('.delete-btn');
-        deleteBtn.addEventListener('click', () => deletePart(part.id, part.title));
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => deletePart(part.id, part.title));
+        }
 
         partsContainer.appendChild(card);
     });

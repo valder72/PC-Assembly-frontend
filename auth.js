@@ -155,6 +155,7 @@ async function updateAuthUI() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', logout);
     }
+    return user;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
