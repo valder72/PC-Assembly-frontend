@@ -58,7 +58,7 @@ async function refreshAccessToken() {
     }
 }
 
-async function authenticatedFetch(url, options = {}) {
+async function authenticatedFetch(url, options = {}, autoRedirect = false) {
     let token = getAccessToken();
 
     options.headers = options.headers || {};
@@ -73,7 +73,7 @@ async function authenticatedFetch(url, options = {}) {
         if (newToken) {
             options.headers['Authorization'] = `Bearer ${newToken}`;
             response = await fetch(url, options);
-        } else {
+        } else if (autoRedirect) {
             const currentPath = window.location.pathname + window.location.search;
             window.location.href = `login.html?next=${encodeURIComponent(currentPath)}`;
         }
@@ -86,7 +86,7 @@ async function getCurrentUser() {
     if (!isAuthenticated()) return null;
 
     try {
-        const response = await authenticatedFetch(`${API_BASE_URL}/user/me/`);
+        const response = await authenticatedFetch(`${API_BASE_URL}/user/me/`, {}, false);
         if (response.ok) {
             return await response.json();
         }
@@ -156,3 +156,7 @@ async function updateAuthUI() {
         logoutBtn.addEventListener('click', logout);
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateAuthUI();
+});
